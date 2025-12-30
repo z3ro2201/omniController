@@ -2,7 +2,7 @@
 import React from "react";
 import { cn } from "@/lib/util";
 
-type TemperatureMode = "COOL" | "HOT";
+type TemperatureMode = "COOL" | "HEAT";
 
 type TemperatureModeSelectProps = {
   name: string;
@@ -37,8 +37,8 @@ const TemperatureModeSelect: React.FC<TemperatureModeSelectProps> = ({ name, onC
       </label>
 
       {/* HOT */}
-      <input type="radio" id={`${name}_HOT`} name={name} value="HOT" checked={value === "HOT"} onChange={(e) => onChange?.(e.target.value as TemperatureMode)} disabled={disabled} className="peer/hot sr-only" />
-      <label htmlFor={`${name}_HOT`} className={cn(baseLabel, inactive, "peer-checked/hot:bg-[rgb(221,81,17)] peer-checked/hot:text-white peer-checked/hot:shadow-sm", disabled && disabledStyle)}>
+      <input type="radio" id={`${name}_HEAT`} name={name} value="HOT" checked={value === "HEAT"} onChange={(e) => onChange?.(e.target.value as TemperatureMode)} disabled={disabled} className="peer/hot sr-only" />
+      <label htmlFor={`${name}_HEAT`} className={cn(baseLabel, inactive, "peer-checked/hot:bg-[rgb(221,81,17)] peer-checked/hot:text-white peer-checked/hot:shadow-sm", disabled && disabledStyle)}>
         난방
       </label>
     </div>

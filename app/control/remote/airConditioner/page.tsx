@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import CircularGauge from "@/components/circularGuage";
-import CheckRadio from "@/components/checkRadio";
 import ToggleSwitch from "@/components/toggle";
 import TemperatureSlider from "@/components/temperatureSlider";
 import TemperatureModeSelect from "@/components/temperatureSelect";
@@ -10,14 +9,17 @@ import WindControl from "@/components/windControl";
 
 const TEMP_CONFIG = {
   COOL: { min: 20, max: 24, color: "#2b7fff" },
-  HOT: { min: 20, max: 24, color: "#df592a" },
+  HEAT: { min: 20, max: 24, color: "#df592a" },
 } as const;
 
 type TemperatureMode = keyof typeof TEMP_CONFIG;
 
 const circleSize = 200;
 
+const ALLOW_DEVICE_ALIAS = ["사무실", "홀"];
+
 const OmniAirConditionerControlPage = () => {
+  const [deviceList, setDeviceList] = useState<null | any>(null);
   const [officeTemperature, setOfficeTemperature] = useState<number>(TEMP_CONFIG.COOL.min);
   const [diningTemperature, setDiningTemperature] = useState<number>(TEMP_CONFIG.COOL.min);
   const [officeTemperatureMode, setOfficeTemperatureMode] = useState<TemperatureMode>("COOL");
@@ -25,6 +27,67 @@ const OmniAirConditionerControlPage = () => {
 
   const [officePowerOn, setOfficePowerOn] = useState(false);
   const [diningPowerOn, setDiningPowerOn] = useState(false);
+
+  // 제품 목록 조회
+  const getDevicesList = async () => {
+    try {
+      const res = await fetch("/api/thinq/devices", {
+        headers: {
+          "x-message-id": "fNvdZ1brTn-wWKUlWGoSVw",
+          "x-client-id": "test-client-123456",
+          "x-api-key": "v6GFvkweNo7DK7yD3ylIZ9w52aKBU0eJ7wLXkSR3",
+        },
+      });
+
+      const json = await res.json();
+
+      const device = json?.resultData?.response?.filter((item: any) => item?.deviceInfo?.deviceType === "DEVICE_AIR_CONDITIONER");
+
+      setDeviceList(device);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    getDevicesList();
+  }, []);
+
+  // 제품 상태 조회
+  const getDeviceState = async (deviceId: string, aliasName: string) => {
+    if (!deviceId) return;
+    try {
+      const res = await fetch(`/api/thinq/devices/${deviceId}/state`, {
+        headers: {
+          "x-message-id": "fNvdZ1brTn-wWKUlWGoSVw",
+          "x-client-id": "test-client-123456",
+          "x-api-key": "v6GFvkweNo7DK7yD3ylIZ9w52aKBU0eJ7wLXkSR3",
+        },
+      });
+
+      const json = await res.json();
+
+      const { resultCode = 0, resultData = {}, resultMessage = null } = json;
+      const { response = {} } = resultData;
+      if (aliasName === "홀") {
+        setDiningPowerOn(response?.powerSave?.powerSaveEnabled);
+        setDiningTemperature(response?.temperature.targetTemperature);
+        setDiningTemperatureMode(response?.airConJobMode?.currentJobMode);
+      }
+      if (aliasName === "사무실") {
+        setOfficePowerOn(response?.powerSave?.powerSaveEnabled);
+        setOfficeTemperature(response?.temperature.targetTemperature);
+        setOfficeTemperatureMode(response?.airConJobMode?.currentJobMode);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    if (!Array.isArray(deviceList) || deviceList.length === 0) return;
+    deviceList.map((item: any) => getDeviceState(item?.deviceId, item?.deviceInfo?.alias));
+  }, [deviceList]);
 
   return (
     <>
