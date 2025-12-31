@@ -136,9 +136,7 @@ const OmniAirConditionerControlPage = () => {
                   size="md"
                   onChange={(checked) => {
                     setOfficePowerOn(checked);
-                    if (!checked) {
-                      setOfficeTemperature(TEMP_CONFIG.COOL.min);
-                    }
+                    if (!checked) setOfficeTemperature(TEMP_CONFIG.COOL.min);
                   }}
                 />
               </div>
