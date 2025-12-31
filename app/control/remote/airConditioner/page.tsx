@@ -21,7 +21,7 @@ type DeviceItem = {
 };
 
 type SelectDevice = { deviceName: string; value: string | null };
-type ControlMode = "power" | "temperature" | "mode" | "wind";
+type ControlMode = "power" | "temperature" | "mode" | "wind" | "windDirection";
 
 const windStrength = (value?: WindStrength | string): number => {
   switch (value) {
@@ -37,7 +37,9 @@ const windStrength = (value?: WindStrength | string): number => {
 };
 
 const devicePowerState = (value?: string) => value === "POWER_ON";
-const devicePowerControl = (value?: boolean) => (value ? "POWER_ON" : "POWER_OFF");
+const devicePowerControl = (value?: boolean) => (!value ? "POWER_ON" : "POWER_OFF");
+
+const DATE_LIST = ["일", "월", "화", "수", "목", "금", "토"];
 
 const normalizeTemperatureMode = (value?: string): TemperatureMode => {
   if (!value) return "COOL";
@@ -58,10 +60,13 @@ const OmniAirConditionerControlPage = () => {
   const [deviceList, setDeviceList] = useState<DeviceItem[] | null>(null);
   const [selectDevice, setSelectDevice] = useState<SelectDevice>({ deviceName: "", value: null });
 
+  const [dataUpdate, setDataUpdate] = useState<boolean>(true);
+
   const [powerOn, setPowerOn] = useState(false);
   const [temperature, setTemperature] = useState<number>(TEMP_CONFIG.COOL.min);
   const [mode, setMode] = useState<TemperatureMode>("COOL");
   const [wind, setWind] = useState<number>(1);
+  const [windDirection, setWindDirection] = useState<boolean>(false);
 
   const headers = useMemo(
     () => ({
@@ -75,6 +80,7 @@ const OmniAirConditionerControlPage = () => {
   const conf = TEMP_CONFIG[mode] ?? TEMP_CONFIG.COOL;
 
   const getDevicesList = async () => {
+    setDataUpdate(true);
     try {
       const res = await fetch("/api/thinq/devices", { headers });
       const json = await res.json();
@@ -84,15 +90,29 @@ const OmniAirConditionerControlPage = () => {
       setDeviceList(devices);
     } catch (e) {
       console.error(e);
+    } finally {
+      setDataUpdate(false);
     }
   };
+
+  const [nowDate, setNowDate] = useState<string>("");
+  const [now, setNow] = useState<Date>(new Date());
+  const [stateUpdatetime, setStateUpdatetime] = useState<Date>(new Date());
 
   useEffect(() => {
     void getDevicesList();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    const timer = setInterval(() => {
+      const now = new Date();
+      setNow(now);
+      setNowDate(`${now.getFullYear()}년 ${String(now.getMonth() + 1).padStart(2, "0")}월 ${String(now.getDate()).padStart(2, "0")}일 ${DATE_LIST[now.getDay()]}요일`);
+    }, 1000);
+
+    return () => clearInterval(timer);
   }, []);
 
-  const getDeviceState = async (deviceId: string) => {
+  const getDeviceState = async (deviceId: string | null) => {
     if (!deviceId) return;
 
     try {
@@ -109,11 +129,14 @@ const OmniAirConditionerControlPage = () => {
       const nextTemp = clamp(nextTempRaw, nextConf.min, nextConf.max);
 
       const nextWind = windStrength(response?.airFlow?.windStrength);
+      const nextWindDirection = response?.windDirection?.rotateUpDown;
 
       setPowerOn(nextPower);
       setMode(nextMode);
       setTemperature(nextTemp);
       setWind(nextWind);
+      setWindDirection(nextWindDirection);
+      setStateUpdatetime(new Date());
     } catch (e) {
       console.error(e);
     }
@@ -143,6 +166,9 @@ const OmniAirConditionerControlPage = () => {
         // return { temperature: { [key]: temperature } };
       }
 
+      case "windDirection":
+        return { windDirection: windDirection };
+
       case "wind":
         // wind가 1/2/3이면 enum(HIGH/MID/LOW)로 변환해서 보내는 게 스펙에 맞음
         // (프로필에 windStrength는 HIGH/LOW/MID)
@@ -158,7 +184,7 @@ const OmniAirConditionerControlPage = () => {
   };
 
   const updateDeviceState = async (controlMode: ControlMode) => {
-    if (!selectDevice.value) return;
+    if (!selectDevice.value || dataUpdate) return;
 
     const payload = generatePayload(controlMode);
 
@@ -208,14 +234,16 @@ const OmniAirConditionerControlPage = () => {
   }, [wind]);
 
   useEffect(() => {
+    void updateDeviceState("windDirection");
+  }, [windDirection]);
+
+  useEffect(() => {
     void updateDeviceState("temperature");
   }, [temperature]);
 
   const handleChangeMode = (v: string) => {
     const nextMode = normalizeTemperatureMode(String(v));
-    const nextConf = TEMP_CONFIG[nextMode] ?? TEMP_CONFIG.COOL;
-
-    console.log("mode onChange:", v, "=>", nextMode);
+    const nextConf = TEMP_CONFIG[nextMode] ? TEMP_CONFIG.COOL : TEMP_CONFIG.HEAT;
 
     setMode(nextMode);
     setTemperature((t) => clamp(t, nextConf.min, nextConf.max));
@@ -224,10 +252,10 @@ const OmniAirConditionerControlPage = () => {
   const hasSelected = !!selectDevice.value;
 
   return (
-    <div className="p-2 w-[480px]">
+    <div className="p-2 w-[580px] select-none">
       <div className="mb-2 text-right">
         <select
-          className="px-4 py-2.5 bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-lg focus:ring-brand focus:border-brand shadow-xs placeholder:text-body"
+          className="px-4 py-2.5 bg-neutral-secondary-medium border border-gray-200 text-heading text-sm rounded-lg focus:ring-brand focus:border-brand shadow-xs placeholder:text-body"
           value={selectDevice.value ?? ""}
           onChange={(e) => {
             const el = e.currentTarget;
@@ -246,17 +274,22 @@ const OmniAirConditionerControlPage = () => {
       </div>
 
       {hasSelected ? (
-        <section className="p-4 border border-gray-200">
-          <h1>{selectDevice.deviceName} 운전현황</h1>
+        <section className="py-2 border border-gray-200">
+          <div className="px-4 pb-2 mb-2 flex justify-between items-center border-b border-solid border-gray-200 dark:border-gray-700">
+            <h1 className="text-[22px] font-bold">{selectDevice.deviceName} 운전현황</h1>
+            <span className="block text-right text-[14px]">
+              {nowDate} {now.toLocaleTimeString("ko-KR", { hour12: false })}
+            </span>
+          </div>
 
-          <div className="flex gap-2 items-center justify-between">
-            <div style={{ width: circleSize, height: circleSize }}>
-              <CircularGauge value={temperature} size={circleSize} color={conf.color} max={conf.max} label={powerOn ? "작동 중" : "전원 꺼짐"} />
+          <div className="px-4 flex gap-2 items-center justify-between">
+            <div className="ml-2 mr-6" style={{ width: circleSize, height: circleSize }}>
+              <CircularGauge value={temperature} min={conf.min} size={circleSize} color={powerOn ? conf.color : "#e5e7eb"} max={conf.max} label={powerOn ? "작동 중" : "전원 꺼짐"} />
             </div>
 
-            <div className="flex gap-2 flex-col items-center justify-center">
-              <div className="flex items-center gap-2">
-                <div className="flex flex-col">
+            <div className="w-full flex gap-2 flex-col items-center justify-center">
+              <div className="w-full flex items-center gap-2">
+                <div className="mr-4 flex flex-col">
                   <h4 className="mb-2 font-bold">전원</h4>
                   <ToggleSwitch
                     checked={powerOn}
@@ -274,14 +307,28 @@ const OmniAirConditionerControlPage = () => {
                 </div>
 
                 <div className="flex flex-col">
-                  <h4 className="mb-2 font-bold">운전모드</h4>
+                  <h4 className="mb-2 font-bold">운전방식</h4>
                   <TemperatureModeSelect name="temperatureModeSelectButton" disabled={!powerOn} onChange={handleChangeMode} value={mode} />
                 </div>
               </div>
 
-              <div className="w-full">
-                <h4 className="mb-2 font-bold">바람세기</h4>
-                <WindControl value={wind} onChange={setWind} disabled={!powerOn} />
+              <div className="w-full flex gap-2">
+                <div className="mr-4 flex flex-col justify-center">
+                  <h4 className="mb-2 font-bold">바람세기</h4>
+                  <WindControl value={wind} onChange={setWind} disabled={!powerOn} />
+                </div>
+
+                <div className="flex flex-col justify-center">
+                  <h4 className="mb-2 font-bold">상/하모드</h4>
+                  <ToggleSwitch
+                    checked={windDirection}
+                    size="md"
+                    onChange={(checked) => {
+                      setWindDirection(checked);
+                    }}
+                    disabled={!powerOn}
+                  />
+                </div>
               </div>
 
               <div className="w-full">
@@ -292,6 +339,13 @@ const OmniAirConditionerControlPage = () => {
                 <TemperatureSlider min={conf.min} max={conf.max} value={temperature} onChange={(v) => setTemperature(clamp(v, conf.min, conf.max))} disabled={!powerOn} />
               </div>
             </div>
+          </div>
+
+          <div className="px-4 mt-2 pt-2 flex justify-between text-[13px] items-center border-t border-gray-200 dark:border-gray-700">
+            <span>갱신시간: {stateUpdatetime.toISOString().split("T").join(" ")}</span>
+            <button type="button" className="px-2 py-1 border rounded-lg bg-neutral-50 border border-gray-200 dark:bg-gray-900 dark:border-neutral-700 cursor-pointer font-bold" onClick={() => getDeviceState(selectDevice?.value)}>
+              상태 갱신
+            </button>
           </div>
         </section>
       ) : (

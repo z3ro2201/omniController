@@ -26,7 +26,7 @@ const TemperatureModeSelect: React.FC<TemperatureModeSelectProps> = ({ name, onC
         // ✅ gap-px 로 버튼 사이 "틈" 느낌
         "flex gap-px rounded-lg overflow-hidden",
         // ✅ gap 색상을 보더처럼 보이게
-        "bg-neutral-300 dark:bg-neutral-700",
+        "bg-neutral-300 dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-700",
         disabled && "opacity-90"
       )}
     >
@@ -37,7 +37,7 @@ const TemperatureModeSelect: React.FC<TemperatureModeSelectProps> = ({ name, onC
       </label>
 
       {/* HOT */}
-      <input type="radio" id={`${name}_HEAT`} name={name} value="HOT" checked={value === "HEAT"} onChange={(e) => onChange?.(e.target.value as TemperatureMode)} disabled={disabled} className="peer/hot sr-only" />
+      <input type="radio" id={`${name}_HEAT`} name={name} value="HEAT" checked={value === "HEAT"} onChange={(e) => onChange?.(e.target.value as TemperatureMode)} disabled={disabled} className="peer/hot sr-only" />
       <label htmlFor={`${name}_HEAT`} className={cn(baseLabel, inactive, "peer-checked/hot:bg-[rgb(221,81,17)] peer-checked/hot:text-white peer-checked/hot:shadow-sm", disabled && disabledStyle)}>
         난방
       </label>

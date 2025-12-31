@@ -1,18 +1,23 @@
 type CircularGaugeProps = {
   value: number;
+  min?: number;
   max?: number;
   label?: string;
   size?: number;
   color?: string;
 };
 
-export default function CircularGauge({ value, size = 140, max = 150, color = "#3b82f6", label = "작동 중" }: CircularGaugeProps) {
+export default function CircularGauge({ value, min = 20, max = 24, size = 140, color = "#3b82f6", label = "작동 중" }: CircularGaugeProps) {
   const BASE_SIZE = 140;
   const radius = 60;
   const center = BASE_SIZE / 2;
 
   const circumference = 2 * Math.PI * radius;
-  const progress = Math.min(value / max, 1);
+
+  // ✅ 핵심 로직
+  const rawProgress = (value - min) / (max - min);
+  const progress = Math.min(Math.max(rawProgress, 0), 1);
+
   const offset = circumference * (1 - progress);
 
   return (
@@ -29,21 +34,7 @@ export default function CircularGauge({ value, size = 140, max = 150, color = "#
         <circle cx={center} cy={center} r={radius} stroke="#e5e7eb" strokeWidth="10" fill="none" />
 
         {/* 진행 */}
-        <circle
-          cx={center}
-          cy={center}
-          r={radius}
-          stroke={color}
-          strokeWidth="10"
-          fill="none"
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          transform={`rotate(-90 ${center} ${center})`}
-          style={{
-            transition: "stroke-dashoffset 0.5s ease",
-          }}
-        />
+        <circle cx={center} cy={center} r={radius} stroke={color} strokeWidth="10" fill="none" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset} transform={`rotate(-90 ${center} ${center})`} style={{ transition: "stroke-dashoffset 0.5s ease" }} />
       </svg>
 
       {/* 중앙 텍스트 */}
