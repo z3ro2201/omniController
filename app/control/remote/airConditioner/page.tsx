@@ -13,10 +13,30 @@ const TEMP_CONFIG = {
 } as const;
 
 type TemperatureMode = keyof typeof TEMP_CONFIG;
+type WindStrength = "LOW" | "MID" | "HIGH";
 
 const circleSize = 200;
 
 const ALLOW_DEVICE_ALIAS = ["사무실", "홀"];
+
+// 제품 바람 세기
+const windStrength = (value?: WindStrength | string): number => {
+  switch (value) {
+    case "LOW":
+      return 1;
+    case "MID":
+      return 2;
+    case "HIGH":
+      return 3;
+    default:
+      return 1; // 안전 기본값
+  }
+};
+
+// 제품 전원 상태
+const devicePowerState = (value: string) => {
+  return value === "POWER_ON" ? true : false;
+};
 
 const OmniAirConditionerControlPage = () => {
   const [deviceList, setDeviceList] = useState<null | any>(null);
@@ -24,6 +44,8 @@ const OmniAirConditionerControlPage = () => {
   const [diningTemperature, setDiningTemperature] = useState<number>(TEMP_CONFIG.COOL.min);
   const [officeTemperatureMode, setOfficeTemperatureMode] = useState<TemperatureMode>("COOL");
   const [diningTemperatureMode, setDiningTemperatureMode] = useState<TemperatureMode>("COOL");
+  const [diningWindStrength, setDiningWindStrength] = useState<number>(1);
+  const [officeWindStrength, setOfficeWindStrength] = useState<number>(1);
 
   const [officePowerOn, setOfficePowerOn] = useState(false);
   const [diningPowerOn, setDiningPowerOn] = useState(false);
@@ -69,15 +91,21 @@ const OmniAirConditionerControlPage = () => {
 
       const { resultCode = 0, resultData = {}, resultMessage = null } = json;
       const { response = {} } = resultData;
+
+      const { operation, temperature, airConJobMode, airFlow } = response;
+      const windStrengthLevel = windStrength(airFlow.windStrength);
+      console.log(windStrengthLevel);
       if (aliasName === "홀") {
-        setDiningPowerOn(response?.powerSave?.powerSaveEnabled);
-        setDiningTemperature(response?.temperature.targetTemperature);
-        setDiningTemperatureMode(response?.airConJobMode?.currentJobMode);
+        setDiningPowerOn(devicePowerState(operation?.airConOperationMode));
+        setDiningTemperature(temperature.targetTemperature);
+        setDiningTemperatureMode(airConJobMode?.currentJobMode);
+        setDiningWindStrength(windStrengthLevel);
       }
       if (aliasName === "사무실") {
-        setOfficePowerOn(response?.powerSave?.powerSaveEnabled);
+        setOfficePowerOn(devicePowerState(response?.operation?.airConOperationMode));
         setOfficeTemperature(response?.temperature.targetTemperature);
         setOfficeTemperatureMode(response?.airConJobMode?.currentJobMode);
+        setOfficeWindStrength(windStrengthLevel);
       }
     } catch (error) {
       console.error(error);
@@ -115,16 +143,19 @@ const OmniAirConditionerControlPage = () => {
                 />
               </div>
               <div className="flex flex-col">
-                <h4 className="mb-2 font-bold">모드</h4>
+                <h4 className="mb-2 font-bold">운전모드</h4>
                 <TemperatureModeSelect name="officeTemperatureSelectButton" disabled={!officePowerOn} onChange={(v) => setOfficeTemperatureMode(v)} value={officeTemperatureMode} />
               </div>
             </div>
             <div className="w-full">
               <h4 className="mb-2 font-bold">바람세기</h4>
-              <WindControl disabled={!officePowerOn} />
+              <WindControl value={officeWindStrength} onChange={setOfficeWindStrength} disabled={!officePowerOn} />
             </div>
             <div className="w-full">
-              <h4 className="mb-2 font-bold">온도</h4>
+              <div className="mb-2 flex justify-between items-center">
+                <h4 className="font-bold">희망온도</h4>
+                <h4 className="font-bold">{officeTemperature} 도</h4>
+              </div>
               <TemperatureSlider min={TEMP_CONFIG.COOL.min} max={TEMP_CONFIG.COOL.max} value={officeTemperature} onChange={setOfficeTemperature} disabled={!officePowerOn} />
             </div>
           </div>
@@ -155,16 +186,19 @@ const OmniAirConditionerControlPage = () => {
                 />
               </div>
               <div className="flex flex-col">
-                <h4 className="mb-2 font-bold">모드</h4>
+                <h4 className="mb-2 font-bold">운전모드</h4>
                 <TemperatureModeSelect name="diningTemperatureSelectButton" disabled={!diningPowerOn} onChange={(v) => setDiningTemperatureMode(v)} value={diningTemperatureMode} />
               </div>
             </div>
             <div className="w-full">
               <h4 className="mb-2 font-bold">바람세기</h4>
-              <WindControl disabled={!diningPowerOn} />
+              <WindControl value={diningWindStrength} onChange={setDiningWindStrength} disabled={!diningPowerOn} />
             </div>
             <div className="w-full">
-              <h4 className="mb-2 font-bold">온도</h4>
+              <div className="mb-2 flex justify-between items-center">
+                <h4 className="font-bold">희망온도</h4>
+                <h4 className="font-bold">{diningTemperature} 도</h4>
+              </div>
               <TemperatureSlider min={TEMP_CONFIG.COOL.min} max={TEMP_CONFIG.COOL.max} value={diningTemperature} onChange={setDiningTemperature} disabled={!diningPowerOn} />
             </div>
           </div>

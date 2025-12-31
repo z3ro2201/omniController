@@ -1,8 +1,9 @@
 "use client";
-import React, { useState } from "react";
+import React from "react";
 import { cn } from "@/lib/util";
 
 type WindControlProps = {
+  value: number; // 부모 상태
   onChange?: (value: number) => void;
   disabled: boolean;
 };
@@ -10,14 +11,12 @@ type WindControlProps = {
 const MIN = 1;
 const MAX = 5;
 
-const WindControl: React.FC<WindControlProps> = ({ onChange, disabled }) => {
-  const [windLevel, setWindLevel] = useState<number>(1);
+const clamp = (n: number) => Math.min(MAX, Math.max(MIN, n));
 
+const WindControl: React.FC<WindControlProps> = ({ value, onChange, disabled }) => {
   const updateWind = (next: number) => {
-    if (disabled) return; // 🔒 전체 비활성
-    if (next < MIN || next > MAX) return;
-    setWindLevel(next);
-    onChange?.(next);
+    if (disabled) return;
+    onChange?.(clamp(next));
   };
 
   return (
@@ -31,11 +30,10 @@ const WindControl: React.FC<WindControlProps> = ({ onChange, disabled }) => {
         disabled && "opacity-50 cursor-not-allowed"
       )}
     >
-      {/* 감소 버튼 */}
       <button
         type="button"
-        onClick={() => updateWind(windLevel - 1)}
-        disabled={disabled || windLevel === MIN}
+        onClick={() => updateWind(value - 1)}
+        disabled={disabled || value === MIN}
         className="
           w-8 h-8 rounded-md font-bold
           bg-white text-neutral-700 border border-neutral-300
@@ -48,22 +46,12 @@ const WindControl: React.FC<WindControlProps> = ({ onChange, disabled }) => {
         −
       </button>
 
-      {/* 현재 풍량 */}
-      <span
-        className="
-          w-6 text-center font-bold
-          text-neutral-800
-          dark:text-neutral-100
-        "
-      >
-        {windLevel}
-      </span>
+      <span className="w-6 text-center font-bold text-neutral-800 dark:text-neutral-100">{value}</span>
 
-      {/* 증가 버튼 */}
       <button
         type="button"
-        onClick={() => updateWind(windLevel + 1)}
-        disabled={disabled || windLevel === MAX}
+        onClick={() => updateWind(value + 1)}
+        disabled={disabled || value === MAX}
         className="
           w-8 h-8 rounded-md font-bold
           bg-white text-neutral-700 border border-neutral-300
