@@ -9,7 +9,8 @@ type WindControlProps = {
 };
 
 const MIN = 1;
-const MAX = 5;
+const MAX = 3;
+
 const clamp = (n: number) => Math.min(MAX, Math.max(MIN, n));
 
 const WindControl: React.FC<WindControlProps> = ({ value, onChange, disabled }) => {
