@@ -47,7 +47,7 @@ const normalizeTemperatureMode = (value?: string): TemperatureMode => {
 };
 
 const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n));
-const safeNumber = (v: any, fallback: number) => {
+const safeNumber = (v: string, fallback: number) => {
   const n = Number(v);
   return Number.isFinite(n) ? n : fallback;
 };
@@ -211,7 +211,7 @@ const OmniAirConditionerControlPage = () => {
     void updateDeviceState("temperature");
   }, [temperature]);
 
-  const handleChangeMode = (v: any) => {
+  const handleChangeMode = (v: string) => {
     const nextMode = normalizeTemperatureMode(String(v));
     const nextConf = TEMP_CONFIG[nextMode] ?? TEMP_CONFIG.COOL;
 
