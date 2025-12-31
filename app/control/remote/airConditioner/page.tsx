@@ -201,6 +201,7 @@ const OmniAirConditionerControlPage = () => {
       return;
     }
 
+    return;
     try {
       const res = await fetch(`/api/thinq/devices/${selectDevice.value}/control`, {
         method: "POST",
