@@ -7,6 +7,10 @@ import TemperatureSlider from "@/components/temperatureSlider";
 import TemperatureModeSelect from "@/components/temperatureSelect";
 import WindControl from "@/components/windControl";
 
+import { WindIcon, PowerIcon, AirVentIcon, FanIcon, ArrowUpDownIcon, ThermometerIcon, CalendarClockIcon, CloudSyncIcon, RefreshCcwIcon } from "lucide-react";
+
+const iconSize: number = 16;
+
 const TEMP_CONFIG = {
   COOL: { min: 20, max: 24, color: "#2b7fff" },
   HEAT: { min: 20, max: 24, color: "#df592a" },
@@ -114,6 +118,7 @@ const OmniAirConditionerControlPage = () => {
 
   const getDeviceState = async (deviceId: string | null) => {
     if (!deviceId) return;
+    setDataUpdate(true);
 
     try {
       const res = await fetch(`/api/thinq/devices/${deviceId}/state`, { headers });
@@ -139,6 +144,8 @@ const OmniAirConditionerControlPage = () => {
       setStateUpdatetime(new Date());
     } catch (e) {
       console.error(e);
+    } finally {
+      setDataUpdate(false);
     }
   };
 
@@ -194,6 +201,7 @@ const OmniAirConditionerControlPage = () => {
       return;
     }
 
+    return;
     try {
       const res = await fetch(`/api/thinq/devices/${selectDevice.value}/control`, {
         method: "POST",
@@ -212,10 +220,9 @@ const OmniAirConditionerControlPage = () => {
       }
 
       const json = await res.json();
-      console.log("control result:", json);
 
       // (선택) 성공 후 상태 다시 동기화하고 싶으면:
-      // await getDeviceState(selectDevice.value);
+      await getDeviceState(selectDevice.value);
 
       return json;
     } catch (error) {
@@ -276,8 +283,12 @@ const OmniAirConditionerControlPage = () => {
       {hasSelected ? (
         <section className="py-2 border border-gray-200">
           <div className="px-4 pb-2 mb-2 flex justify-between items-center border-b border-solid border-gray-200 dark:border-gray-700">
-            <h1 className="text-[22px] font-bold">{selectDevice.deviceName} 운전현황</h1>
-            <span className="block text-right text-[14px]">
+            <h1 className="flex gap-1 font-bold items-center text-[22px]">
+              <WindIcon size={22} />
+              {selectDevice.deviceName} 운전현황
+            </h1>
+            <span className="flex gap-2 items-center justify-end text-[14px]">
+              <CalendarClockIcon size={iconSize} />
               {nowDate} {now.toLocaleTimeString("ko-KR", { hour12: false })}
             </span>
           </div>
@@ -290,7 +301,10 @@ const OmniAirConditionerControlPage = () => {
             <div className="w-full flex gap-2 flex-col items-center justify-center">
               <div className="w-full flex items-center gap-2">
                 <div className="mr-4 flex flex-col">
-                  <h4 className="mb-2 font-bold">전원</h4>
+                  <h4 className="mb-2 flex gap-1 font-bold items-center">
+                    <PowerIcon size={iconSize} />
+                    전원
+                  </h4>
                   <ToggleSwitch
                     checked={powerOn}
                     size="md"
@@ -307,19 +321,28 @@ const OmniAirConditionerControlPage = () => {
                 </div>
 
                 <div className="flex flex-col">
-                  <h4 className="mb-2 font-bold">운전방식</h4>
+                  <h4 className="mb-2 flex gap-1 font-bold items-center">
+                    <AirVentIcon size={iconSize} />
+                    운전방식
+                  </h4>
                   <TemperatureModeSelect name="temperatureModeSelectButton" disabled={!powerOn} onChange={handleChangeMode} value={mode} />
                 </div>
               </div>
 
               <div className="w-full flex gap-2">
                 <div className="mr-4 flex flex-col justify-center">
-                  <h4 className="mb-2 font-bold">바람세기</h4>
+                  <h4 className="mb-2 flex gap-1 font-bold items-center">
+                    <FanIcon size={iconSize} />
+                    바람세기
+                  </h4>
                   <WindControl value={wind} onChange={setWind} disabled={!powerOn} />
                 </div>
 
                 <div className="flex flex-col justify-center">
-                  <h4 className="mb-2 font-bold">상/하모드</h4>
+                  <h4 className="mb-2 flex gap-1 font-bold items-center">
+                    <ArrowUpDownIcon size={16} />
+                    상/하모드
+                  </h4>
                   <ToggleSwitch
                     checked={windDirection}
                     size="md"
@@ -332,8 +355,11 @@ const OmniAirConditionerControlPage = () => {
               </div>
 
               <div className="w-full">
-                <div className="mb-2 flex justify-between items-center">
-                  <h4 className="font-bold">희망온도</h4>
+                <div className="mb-0 flex justify-between items-center">
+                  <h4 className="flex gap-1 font-bold items-center">
+                    <ThermometerIcon size={iconSize} />
+                    희망온도
+                  </h4>
                   <h4 className="font-bold">{temperature} 도</h4>
                 </div>
                 <TemperatureSlider min={conf.min} max={conf.max} value={temperature} onChange={(v) => setTemperature(clamp(v, conf.min, conf.max))} disabled={!powerOn} />
@@ -342,8 +368,12 @@ const OmniAirConditionerControlPage = () => {
           </div>
 
           <div className="px-4 mt-2 pt-2 flex justify-between text-[13px] items-center border-t border-gray-200 dark:border-gray-700">
-            <span>갱신시간: {stateUpdatetime.toISOString().split("T").join(" ")}</span>
-            <button type="button" className="px-2 py-1 border rounded-lg bg-neutral-50 border border-gray-200 dark:bg-gray-900 dark:border-neutral-700 cursor-pointer font-bold" onClick={() => getDeviceState(selectDevice?.value)}>
+            <span className="flex items-center gap-2">
+              <CloudSyncIcon size={iconSize} />
+              갱신시간: {stateUpdatetime.toISOString().split("T").join(" ")}
+            </span>
+            <button type="button" className="px-2 py-1 flex gap-2 items-center border rounded-lg bg-neutral-50 border border-gray-200 dark:bg-gray-900 dark:border-neutral-700 cursor-pointer font-bold" onClick={() => getDeviceState(selectDevice?.value)}>
+              <RefreshCcwIcon size={iconSize} />
               상태 갱신
             </button>
           </div>
