@@ -1,12 +1,15 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { KeyboardEvent, useRef, useState } from "react";
 
 const LoginPage = () => {
   const router = useRouter();
   const [userId, setUserId] = useState<string>("");
   const [userPw, setUserPw] = useState<string>("");
+
+  const idRef = useRef<HTMLInputElement>(null);
+  const pwRef = useRef<HTMLInputElement>(null);
 
   const submitLogin = async () => {
     const user_id = userId.trim();
@@ -38,6 +41,23 @@ const LoginPage = () => {
     }
   };
 
+  const handleKeydownEvent = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== "Enter") return;
+
+    // 🔹 한글 IME 조합 중 Enter 방지
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((event.nativeEvent as any).isComposing) return;
+
+    if (event.currentTarget === idRef.current) {
+      pwRef.current?.focus();
+      return;
+    }
+
+    if (event.currentTarget === pwRef.current) {
+      submitLogin();
+    }
+  };
+
   return (
     <div className="w-screen h-screen flex flex-col justify-center items-center text-[14px]">
       <div>
@@ -45,13 +65,13 @@ const LoginPage = () => {
           <label className="py-2 pl-3 m-2 absolute" htmlFor="txtInputId">
             아이디
           </label>
-          <input type="text" id="txtInputId" className="m-2 py-3 pr-2 pl-[80px] border border-gray-200 rounded-lg" value={userId} onChange={(event) => setUserId(event.target.value)} />
+          <input type="text" id="txtInputId" className="m-2 py-3 pr-2 pl-[80px] border border-gray-200 rounded-lg" value={userId} onChange={(event) => setUserId(event.target.value)} onKeyDown={handleKeydownEvent} ref={idRef} />
         </div>
         <div className="relative block">
           <label className="py-2 pl-3 m-2 absolute" htmlFor="txtInputPw">
             비밀번호
           </label>
-          <input type="password" id="txtInputPw" className="m-2 py-3 pl-[80px] pr-2 border border-gray-200 rounded-lg" value={userPw} onChange={(event) => setUserPw(event.target.value)} />
+          <input type="password" id="txtInputPw" className="m-2 py-3 pl-[80px] pr-2 border border-gray-200 rounded-lg" value={userPw} onChange={(event) => setUserPw(event.target.value)} onKeyDown={handleKeydownEvent} ref={pwRef} />
         </div>
         <div className="block">
           <button type="button" className="block w-full border p-2" onClick={() => submitLogin()}>
