@@ -25,7 +25,7 @@ export async function POST(req: Request) {
     const userPw = body.user_pw ?? "";
 
     if (!userId || !userPw) {
-      return NextResponse.json({ message: "user_id/user_pw required" }, { status: 400 });
+      return NextResponse.json({ resultCode: 401, resultMsg: "user_id/user_pw required" }, { status: 400 });
     }
 
     // 1) 유저 조회 (테이블/컬럼명 네 스키마 그대로)
@@ -33,13 +33,13 @@ export async function POST(req: Request) {
 
     const user = rows?.[0];
     if (!user) {
-      return NextResponse.json({ message: "Invalid credentials" }, { status: 401 });
+      return NextResponse.json({ resultCode: 401, resultMsg: "Invalid credentials" }, { status: 401 });
     }
 
     // 2) 비밀번호 검증 (bcrypt hash 기준)
     const ok = await bcrypt.compare(userPw, user.user_pw);
     if (!ok) {
-      return NextResponse.json({ message: "Invalid credentials" }, { status: 401 });
+      return NextResponse.json({ resultCode: 401, resultMsg: "Invalid credentials" }, { status: 401 });
     }
 
     // 3) 토큰 생성 (Access=1h, Refresh=30d)
@@ -90,33 +90,34 @@ export async function POST(req: Request) {
       conn.release();
     }
 
-    // 5) 응답 (원하면 HttpOnly 쿠키로 저장 가능)
+    // ID값 리턴
     const res = NextResponse.json({
       user: { user_id: user.user_id, user_name: user.user_name, isAdmin: user.isAdmin },
-      accessToken,
-      refreshToken,
-      accessExpireAt: accessExpire.toISOString(),
-      refreshExpireAt: refreshExpire.toISOString(),
     });
 
-    // 쿠키 방식 원하면 아래 주석 해제
-    // res.cookies.set("accessToken", accessToken, {
-    //   httpOnly: true,
-    //   secure: process.env.NODE_ENV === "production",
-    //   sameSite: "lax",
-    //   path: "/",
-    //   maxAge: 60 * 60, // 1h
-    // });
-    // res.cookies.set("refreshToken", refreshToken, {
-    //   httpOnly: true,
-    //   secure: process.env.NODE_ENV === "production",
-    //   sameSite: "lax",
-    //   path: "/",
-    //   maxAge: 60 * 60 * 24 * 30, // 30d
-    // });
+    // accessToken,
+    //   refreshToken,
+    //   accessExpireAt: accessExpire.toISOString(),
+    //   refreshExpireAt: refreshExpire.toISOString(),
+
+    res.cookies.set("accessToken", accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60, // 1h
+    });
+    res.cookies.set("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 30, // 30d
+    });
 
     return res;
   } catch (err) {
-    return NextResponse.json({ message: "Server error", detail: String(err) }, { status: 500 });
+    console.error(err);
+    return NextResponse.json({ resultCode: 500, resultMsg: "Server error", detail: String(err) }, { status: 500 });
   }
 }
