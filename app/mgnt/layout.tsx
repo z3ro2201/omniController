@@ -43,21 +43,25 @@ const ManagementPageLayout = ({ children }: { children: ReactNode }) => {
           <h1 className="font-bold text-[24px]">OMNI Controller</h1>
         </Link>
         <ul className="h-[40px] flex gap-2 items-center text-[14px]">
-          {isAdmin && (
+          {isAdmin ? (
             <li>
               <Link className="flex items-center gap-1" href="/mgnt/users/member/list">
                 <UsersIcon size={16} />
                 사용자관리
               </Link>
             </li>
+          ) : (
+            <></>
           )}
-          {pathname !== "/mgnt/main" && (
+          {pathname !== "/mgnt/main" ? (
             <li>
               <Link className="flex items-center gap-1" href="/control/remote/airConditioner" target="_blank">
                 <AirVentIcon size={16} />
                 에어컨 관리 (새창)
               </Link>
             </li>
+          ) : (
+            <></>
           )}
           <li>
             <Link className="flex items-center gap-1" href="/auth/logout">
