@@ -4,14 +4,7 @@ import { headers } from "next/headers";
 import { db } from "@/lib/db";
 import { sign } from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import type { RowDataPacket } from "mysql2";
-
-type UserRow = RowDataPacket & {
-  user_id: string; // 로그인 ID
-  user_pw: string; // bcrypt hash
-  user_name: string;
-  isAdmin: number; // 0 | 1
-};
+import type { UserTableRow } from "@/types/MemberType";
 
 async function getClientIp(): Promise<string> {
   const h = await headers();
@@ -36,7 +29,7 @@ export async function POST(req: Request) {
     }
 
     // 1) 유저 조회 (테이블/컬럼명 네 스키마 그대로)
-    const [rows] = await db.execute<UserRow[]>("SELECT user_id, user_pw, user_name, isAdmin FROM user WHERE user_id = ? LIMIT 1", [userId]);
+    const [rows] = await db.execute<UserTableRow[]>("SELECT user_id, user_pw, user_name, isAdmin FROM user WHERE user_id = ? LIMIT 1", [userId]);
 
     const user = rows?.[0];
     if (!user) {
