@@ -42,7 +42,7 @@ function decodeJwtPayload(token: string | null) {
   return JSON.parse(json);
 }
 
-function isValidToken({ accessToken, refreshToken }: { accessToken: string; refreshToken: string }) {
+function isValidToken({ accessToken, refreshToken }: { accessToken: string; refreshToken?: string }) {
   const currentTime = Math.floor(Date.now() / 1000);
 
   let isAccessTokenValid: boolean = false;
