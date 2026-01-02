@@ -31,25 +31,27 @@ const MemberListPageLayout = () => {
 
   return (
     <>
-      <div className="p-2">
-        <div className="flex gap-1">
-          <div className="w-[80px]">순서</div>
-          <div className="w-[110px]">ID</div>
-          <div className="w-[80px]">이름</div>
-          <div className="w-[50px]">관리자여부</div>
+      <div className="m-2 border-1 border-solid border-violet-300 rounded-md overflow-hidden">
+        <div className="flex gap-1 bg-violet-50 text-[14px] font-bold text-center">
+          <div className="p-2 w-[80px]">순서</div>
+          <div className="p-2 w-[110px] border-l border-solid border-violet-300">ID</div>
+          <div className="p-2 w-[80px] border-l border-solid border-violet-300">이름</div>
+          <div className="p-2 border-l border-solid border-violet-300">관리자</div>
         </div>
-        {list && list.length > 0 ? (
-          list.map((item, key: number) => (
-            <div className="flex gap-1" key={key}>
-              <div className="w-[80px]">{item.id}</div>
-              <div className="w-[110px]">{item.user_id}</div>
-              <div className="w-[80px]">{item.user_name}</div>
-              <div className="w-[50px]">{item.isAdmin === 1 ? "여" : "부"}</div>
-            </div>
-          ))
-        ) : (
-          <div>사용자를 등록해주세요.</div>
-        )}
+        <div className="flex flex-col text-[13px]">
+          {list && list.length > 0 ? (
+            list.map((item, key: number) => (
+              <div className="flex gap-1 border-t border-solid border-violet-300 text-center" key={key}>
+                <div className="p-2 w-[80px]">{item.id}</div>
+                <div className="p-2 w-[110px] border-l border-solid border-violet-300">{item.user_id}</div>
+                <div className="p-2 w-[80px] border-l border-solid border-violet-300">{item.user_name}</div>
+                <div className="p-2 border-l border-solid border-violet-300">{item.isAdmin === 1 ? "여" : "부"}</div>
+              </div>
+            ))
+          ) : (
+            <div>사용자를 등록해주세요.</div>
+          )}
+        </div>
       </div>
       <div className="text-right">
         <Link href="./add">등록</Link>
