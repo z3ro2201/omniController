@@ -2,13 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { UserTableRow } from "@/types/MemberType";
+
 const MemberListPageLayout = () => {
-  const [list, setList] = useState([]);
-  useEffect(() => {
-    (async () => {
-      getList();
-    })();
-  }, []);
+  const [list, setList] = useState<UserTableRow[]>([]);
 
   const getList = async () => {
     try {
@@ -25,6 +22,12 @@ const MemberListPageLayout = () => {
       console.error(error);
     }
   };
+
+  useEffect(() => {
+    (async () => {
+      getList();
+    })();
+  }, []);
 
   return (
     <>
