@@ -7,25 +7,11 @@ import TemperatureSlider from "@/components/temperatureSlider";
 import TemperatureModeSelect from "@/components/temperatureSelect";
 import WindControl from "@/components/windControl";
 
+import { TEMP_CONFIG } from "@/types/LGAirConditionerStateType";
+import type { LgAirConditionerStateApiResponse, TemperatureMode, WindStrength, DeviceItem, SelectDevice, ControlMode, responseProp } from "@/types/LGAirConditionerStateType";
 import { WindIcon, PowerIcon, AirVentIcon, FanIcon, ArrowUpDownIcon, ThermometerIcon, CalendarClockIcon, CloudSyncIcon, RefreshCcwIcon } from "lucide-react";
 
 const iconSize: number = 16;
-
-const TEMP_CONFIG = {
-  COOL: { min: 20, max: 24, color: "#2b7fff" },
-  HEAT: { min: 20, max: 24, color: "#df592a" },
-} as const;
-
-type TemperatureMode = keyof typeof TEMP_CONFIG;
-type WindStrength = "LOW" | "MID" | "HIGH";
-
-type DeviceItem = {
-  deviceId: string;
-  deviceInfo: { alias: string; deviceType: string };
-};
-
-type SelectDevice = { deviceName: string; value: string | null };
-type ControlMode = "power" | "temperature" | "mode" | "wind" | "windDirection";
 
 const windStrength = (value?: WindStrength | string): number => {
   switch (value) {
@@ -125,15 +111,16 @@ const OmniAirConditionerControlPage = () => {
       const json = await res.json();
 
       const response = json?.resultData?.response ?? {};
+      const { operation, airConJobMode, temperature, airFlow } = json.resultData.response;
 
-      const nextPower = devicePowerState(response?.operation?.airConOperationMode);
-      const nextMode = normalizeTemperatureMode(response?.airConJobMode?.currentJobMode);
+      const nextPower = devicePowerState(operation?.airConOperationMode);
+      const nextMode = normalizeTemperatureMode(airConJobMode?.currentJobMode);
       const nextConf = TEMP_CONFIG[nextMode] ?? TEMP_CONFIG.COOL;
 
-      const nextTempRaw = safeNumber(response?.temperature?.targetTemperature, nextConf.min);
+      const nextTempRaw = safeNumber(temperature?.targetTemperature, nextConf.min);
       const nextTemp = clamp(nextTempRaw, nextConf.min, nextConf.max);
 
-      const nextWind = windStrength(response?.airFlow?.windStrength);
+      const nextWind = windStrength(airFlow?.windStrength);
       const nextWindDirection = response?.windDirection?.rotateUpDown;
 
       setPowerOn(nextPower);
