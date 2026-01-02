@@ -2,7 +2,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import isValidToken from "@/lib/is-valid-token";
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
   // ✅ 무한루프 방지: auth, 정적파일, api 등 제외(필요에 맞게)
   if (pathname.startsWith("/auth") || pathname.startsWith("/_next") || pathname.startsWith("/favicon.ico") || pathname.startsWith("/api")) {
@@ -20,7 +20,7 @@ export async function middleware(req: NextRequest) {
     const refreshToken = req.cookies.get("refreshToken");
 
     // 토큰 유효성 검사
-    const { isAccessTokenValid, isRefreshTokenValid } = isValidToken({ accessToken: accessToken?.value, refreshToken: refreshToken?.value });
+    const { isAccessTokenValid, isRefreshTokenValid } = isValidToken({ accessToken: accessToken?.value ?? "", refreshToken: refreshToken?.value ?? "" });
 
     // 리프레시 토큰이 유효하지 않을 경우 로그인 페이지로 리다이렉트
     if (!isRefreshTokenValid) {
